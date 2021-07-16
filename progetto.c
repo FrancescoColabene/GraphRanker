@@ -3,19 +3,24 @@
 
 //AggiungiGrafo - ritorna il costo del grafo appena aggiunto
 int AggiungiGrafo(int n, int graph[n][n]){
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            printf("%d,",graph[i][j]);
-        }
-        printf("\n");
-    }
+    //for (int i = 0; i < n; ++i) {
+    //    for (int j = 0; j < n; ++j) {
+    //        printf("%d,",graph[i][j]);
+    //    }
+    //    printf("\n");
+    //}
     // Stampa il grafo
-    int weight=0;
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            ++weight;
-        }
-    }
+    int weight;
+    //for (int i = 0; i < n; ++i) {
+    //    for (int j = 0; j < n; ++j) {
+    //        // Solo per togliere il warning sul return value
+    //        ++weight;
+    //    }
+    //}
+
+    // Test per grafi con 2 nodi:
+    weight = graph[0][1];
+
     return weight;
 }
 
@@ -44,7 +49,7 @@ void updateRank(int newIndex, int newPoint, int index[], int point[], int length
                     point[j] = pointTemp;
                     pointTemp = newPoint;
                     newIndex = index[j];
-                    index[i] = indexTemp;
+                    index[j] = indexTemp;
                     indexTemp = newIndex;
                 }
                 break;
@@ -58,7 +63,7 @@ void updateRank(int newIndex, int newPoint, int index[], int point[], int length
                 // Se sto guardando un altro peso ed è maggiore di quello nuovo
                 if(newPoint < point[i]){
                     // Ciclo in cui sposto gli indici a destra di una posizione partendo dalla fine
-                    for (int j = length-2; j > i; --j) {
+                    for (int j = length-2; j >= i; --j) {
                         point[j+1] = point[j];
                         index[j+1] = index[j];
                     }
@@ -90,8 +95,8 @@ int main() {
         // ho un solo nodo/nodi negativi/classifica vuota: wtf?
         return 0;
     }
-    int rankIndex[topLength - 1];
-    int rankPoints[topLength - 1];
+    int rankIndex[topLength];
+    int rankPoints[topLength];
     // Inizializzazione della classifica con valori vuoti di default
     for (int i = 0; i < topLength; ++i) {
         rankIndex[i] = -1;
@@ -103,17 +108,19 @@ int main() {
     // Inizio del ciclo - in legge sempre \n
     while(1) {
         in = getchar();
-        if (in == EOF) break;
+        if(in){}
         // Non sono alla fine del file, leggo input
-        if (scanf("%s", input)){}
-        trash = printf("ho letto %s\n", input);
+        if (scanf("%s", input) == EOF){break;}
         if (strcmp(input, "AggiungiGrafo") == 0){
             // Devo aggiungere un grafo, quindi leggo la matrice di adiacenza
             int tempMat[nodes][nodes];
             for (int i = 0; i < nodes; ++i) {
                 for (int j = 0; j < nodes; ++j) {
+                    int temp;
                     trash = getchar();
-                    tempMat[i][j] = getchar() - 48;
+                    // Invece di scanf potrei leggere carattere per carattere e poi sistemarlo in un intero - da fare post funzionamento della logica
+                    if(scanf("%d", &temp)){}
+                    tempMat[i][j] = temp;
                     //printf("ho letto: %d trash: %d\n",tempMat[i][j], trash);
                 }
             }
@@ -126,10 +133,9 @@ int main() {
             //Se non ho nemmeno un grafo non stampo nulla
             if (graphs) {
                 TopK(rankIndex,topLength);
-
             }
         }
-        if(strcmp(input, "quit") == 0) return 0;
     }
     if(trash){}
+    return 0;
 }
