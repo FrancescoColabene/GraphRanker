@@ -1,6 +1,7 @@
+# I miei gitignore
 /CMakeLists.txt
 /test
-
+/cmake-build-debug
 
 # Prerequisites
 *.d
