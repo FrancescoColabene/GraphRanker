@@ -1,8 +1,13 @@
 # I miei gitignore
 /CMakeLists.txt
+/proj
 /test
-/input
+/outputfilecg
+/outputfilemi
 /cmake-build-debug
+/cmake-build-con-deval
+/cmake-build-con-deval-coverage
+/cmake-build-senza-deval
 
 # Prerequisites
 *.d
