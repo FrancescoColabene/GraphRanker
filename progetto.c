@@ -50,20 +50,54 @@ void createMinHeapify(Node heap[], int *hsP, int len);
 //strtol invece di scanf?
 int main() {
     // Numero di nomi
-    int nodes;
+    int nodes=0;
     // Lunghezza della classifica
-    int rankLength;
-    // Variabile usata come risultato di getchar per evitare warning
-    int trash;
+    int rankLength=0;
+    // Variabile salva il risultato delle getchar, per leggere ogni input
+    int buffer;
     // Indice del grafo attuale e numero di tutti i grafi considerati
     int graphs=0;
     // Puntatore al numero di grafi per formattazione
     int *g = &graphs;
-    // Stringa in cui viene salvato l'input
-    char input[15];
+    // Vettore di interi in cui vengono salvate le cifre dei numeri
+    int in[10];
+    // Variabile utile al ciclo di lettura dell'input
+    int order;
+    // Variabile utile al ciclo di lettura dell'input
+    int inCount;
+    // Variabile utile al ciclo di lettura dell'input
+    int pop=1;
 
     // Inizializzazione: lettura del numero di nodi e lunghezza della classifica
-    if (scanf("%d %d",&nodes,&rankLength)){}
+    //if (scanf("%d %d",&nodes,&rankLength)){}
+
+    buffer = getchar_unlocked() - 48;
+    for (inCount = 0; inCount < 10 && buffer >= 0; ++inCount) {
+        in[inCount] = buffer;
+        buffer = getchar_unlocked() - 48;
+    }
+    order = --inCount;
+    for (; order >=0 ; --order) {
+        for (int k = 0; k < order; ++k) {
+            pop*=10;
+        }
+        nodes += in[inCount-order] * pop;
+        pop=1;
+    }
+    buffer = getchar_unlocked() - 48;
+    for (inCount = 0; inCount < 10 && buffer >= 0; ++inCount) {
+        in[inCount] = buffer;
+        buffer = getchar_unlocked() - 48;
+    }
+    order = --inCount;
+    for (; order >=0 ; --order) {
+        for (int k = 0; k < order; ++k) {
+            pop*=10;
+        }
+        rankLength += in[inCount-order] * pop;
+        pop=1;
+    }
+
     if(nodes<2 || rankLength < 1){
         // ho un solo nodo/nodi negativi/classifica vuota: wtf?
         return 0;
@@ -86,27 +120,43 @@ int main() {
 
     // Inizio del ciclo
     while(1) {
-        // Questo getchar() legge sempre '\n'
-        trash = getchar();
-        // Leggo input e controllo se sono alla fine del file
-        if (scanf("%s", input) == EOF){break;}
+        // Questo getchar legge sempre '\n' oppure l'EOF
+        buffer = getchar_unlocked();
+        // Controllo se sono alla fine del file
+        if (buffer == EOF){break;}
         // Check della stringa per capire la prossima funzione
         // ASSUNZIONE DI INPUT CORRETTA, se leggo 'A' farò AggiungiGrafo,
         // altrimenti TopK
-        if (input[0] == 'A'){
+        if (buffer == 'A'){
+            // Devo finire di leggere la parola "AggiungiGrafo" + '\n'
+            for (int i = 0; i < 13; ++i) {
+                buffer = getchar_unlocked();
+            }
             // Matrice di adiacenza del nuovo grafo
             int tempMat[nodes][nodes];
             // Inserimento dei valori nella matrice
             for (int i = 0; i < nodes; ++i) {
                 for (int j = 0; j < nodes; ++j) {
-                    // Questo getchar() legge '\n' e ','
-                    trash = getchar();
-                    // Invece di scanf potrei leggere carattere per carattere e poi sistemarlo in un intero - da fare post funzionamento della logica
-                    // Gli archi che portano al nodo 0 non servono per il calcolo del percorso, li imposto a 0 per riutilizzarli successivamente
-                    if(scanf("%d", &tempMat[i][j])){}
-                    if(j==0){
-                        tempMat[i][j]=0;
+                    // In questo ciclo leggo una cifra alla volta fino alla virgola e la salvo in un vettore.
+                    // Poi nel ciclo successivo ripristino il numero originale e lo salvo nella posizione corretta dell'array
+                    buffer = getchar_unlocked() - 48;
+                    for (inCount = 0; inCount < 10 && buffer >=0; ++inCount) {
+                        in[inCount] = buffer;
+                        buffer = getchar_unlocked() - 48;
                     }
+                    // Gli archi che portano al nodo 0 non servono per il calcolo del percorso, li imposto a 0 per riutilizzarli successivamente
+                    buffer = 0;
+                    if(j!=0) {
+                        order = --inCount;
+                        for (; order >= 0; --order) {
+                            for (int k = 0; k < order; ++k) {
+                                pop*=10;
+                            }
+                            buffer += in[inCount-order] * pop;
+                            pop=1;
+                        }
+                    }
+                    tempMat[i][j] = buffer;
                 }
             }
             // Se possibile, aggiorno la classifica passandogli tutti i parametri necessari:
@@ -129,11 +179,13 @@ int main() {
             // Incremento l'indice del grafo
             graphs++;
         } else {
-                TopK(rankIndex, rankLength, g);
+            for (int i = 0; i < 4; ++i) {
+                buffer = getchar_unlocked();
+            }
+            TopK(rankIndex, rankLength, g);
         }
     }
-    // Check del valore di trash per evitare warning
-    if(trash){}
+    // Check del valore di buffer per evitare warning
     return 0;
 }
 
