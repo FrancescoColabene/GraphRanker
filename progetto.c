@@ -7,6 +7,7 @@ typedef struct node{
     int index;
 }Node;
 
+
 // Enumerazione per utilizzare un booleano
 typedef enum { false, true } bool;
 
@@ -101,7 +102,11 @@ int main() {
                     // Questo getchar() legge '\n' e ','
                     trash = getchar();
                     // Invece di scanf potrei leggere carattere per carattere e poi sistemarlo in un intero - da fare post funzionamento della logica
+                    // Gli archi che portano al nodo 0 non servono per il calcolo del percorso, li imposto a 0 per riutilizzarli successivamente
                     if(scanf("%d", &tempMat[i][j])){}
+                    if(j==0){
+                        tempMat[i][j]=0;
+                    }
                 }
             }
             // Se possibile, aggiorno la classifica passandogli tutti i parametri necessari:
@@ -111,8 +116,7 @@ int main() {
             printf("\nGrafo numero %d:\n", graphs);
             #endif
             int weight = AggiungiGrafo(nodes, tempMat);
-
-            if(weight==-20) return 2;
+            //if(weight==-20) return 2;
             #ifndef EVAL
             printf("Fine grafo numero %d.\n", graphs);
             #endif
@@ -160,40 +164,48 @@ int AggiungiGrafo(int n, int graph[n][n]){
     // Algoritmo di Dijkstra
     createMinHeapify(tempGraph,hsP,n);
     while(hs > 0){
+        // Estrazione del nodo con distanza minima
         struct node temp = deleteMin(tempGraph,hsP);
         int tempIndex = temp.index;
-        //int maxI = tempIndex;
         if(temp.dist == 2147483647) break;
-        for (int i = 1; i < n; ++i) {
-            if(graph[tempIndex][i] > 0 && i!=tempIndex){
+        int cont=0;
+        // Ciclo sui nodi cercando un successore di temp
+        while(cont<n){
+            int i = tempGraph[cont].index;
+            // Se trovo un successore (evitando gli autoanelli)
+            if(i != tempIndex && graph[tempIndex][i] > 0){
                 int newDist = temp.dist + graph[tempIndex][i];
-                for (int j = 0; j < n; ++j) {
-                    if(tempGraph[j].dist > newDist && tempGraph[j].index == i){
-                        #ifndef EVAL
-                        printf("Sovrascrivo distanza del nodo %d a %d\n",i,newDist);
-                        #endif
-                        tempGraph[j].dist = newDist;
-                        int k = ceil((double) j/2) - 1;
-                        while(j>0 && tempGraph[k].dist > tempGraph[j].dist){
-                            swap(tempGraph,k,j);
-                            j = ceil((double) j/2) - 1;
-                            k = ceil((double) k/2) - 1;
-                        }
-                        break;
+                // Calcolo la nuova distanza e la confronto con la precedente, se è minore allora la sovrascrivo sia nell'heap
+                // sia nella prima colonna della matrice, poi sposto il nodo  modificato verso la radice confrontandolo ciclicamente con suo padre
+                if(tempGraph[cont].dist > newDist){
+                    tempGraph[cont].dist = newDist;
+                    graph[i][0] = newDist;
+                    int k = ceil((double) cont/2) - 1;
+                    while(cont>0 && tempGraph[k].dist > tempGraph[cont].dist){
+                        swap(tempGraph,k,cont);
+                        cont = ceil((double) cont/2) - 1;
+                        k = ceil((double) k/2) - 1;
                     }
                 }
             }
+            cont++;
         }
+        // check sull'integrità dell'heap
+        //int x = tempGraph[0].dist;
+        //for (int i = 1; i < hs; ++i) {
+        //    if(x > tempGraph[i].dist) {
+        //        printf("\nminimo: %d con indice %d, intruso: %d con indice %d, i vale %d", tempGraph[0].dist, tempGraph[0].index, tempGraph[i].dist, tempGraph[i].index, i);
+        //        return -20;
+        //    }
+        //}
     }
     int weight=0;
     for (int i = 0; i < n; ++i) {
-        if(tempGraph[i].dist == 2147483647) tempGraph[i].dist=0;
+        weight += graph[i][0];
         #ifndef EVAL
         printf("Un peso è %d\n",tempGraph[i].dist);
         #endif
-        weight += tempGraph[i].dist;
     }
-
     #ifndef EVAL
     printf("Il peso del grafo è %d\n",weight);
     #endif
@@ -317,7 +329,6 @@ struct node deleteMin(struct node heap[], int *hsP){
     heap[0] = heap[*hsP-1];
     --*hsP;
     minHeapify(heap, 0, hsP);
-    // Serve per non perdere nessun risultato!
     heap[*hsP] = res;
     return res;
 }
