@@ -8,9 +8,6 @@ typedef struct node{
 }Node;
 
 
-// Enumerazione per utilizzare un booleano
-typedef enum { false, true } bool;
-
 //------------PROTOTIPI----------------
 
 //AggiungiGrafo - ritorna il costo del grafo appena aggiunto
@@ -19,9 +16,18 @@ int AggiungiGrafo(int n, int graphs[n][n]);
 // TopK - stampo la classifica attuale
 void TopK(int index[], int length, int *g);
 
-// updateRank - aggiorno la attuale classifica con il peso del nuovo grafo.
-void updateRank(int newIndex, int newPoint, int index[], int point[], int rLength);
 // Tutte le funzioni qui sotto sono per la gestione del minHeap per l'algoritmo di Dijkstra
+
+// Dato un vettore di elementi non mucchificati, crea un minHeap.
+void createMinHeapify(Node heap[], int *hsP, int len);
+
+// Funzione di supporto per le altre: assumendo che i sottoheap dei figlio del nodo passato siano heap, mucchifico anche questi 3 nodi.
+// Nel caso di scambi di posizione, dovrò richiamare la funzione sui nodi inferiori per garantire la relazione padre<figlio
+void minHeapify(Node heap[], int n, int *hsP);
+
+// Ritorna la radice dell'heap, o -1 se è vuoto. Se non è vuoto, mette l'ultima foglia come radice
+// e chiama minHeapify sulla radice per sistemare l'heap rimasto.
+struct node deleteMin(Node heap[], int *hsP);
 
 // Scambia i valori di due posizioni in un vettore
 void swap(Node heap[],int x, int y);
@@ -32,33 +38,50 @@ int left(int n);
 // Ritorna il figlio destro del nodo passato
 int right(int n);
 
-// Funzione di supporto per le altre: assumendo che i sottoheap dei figlio del nodo passato siano heap, mucchifico anche questi 3 nodi.
-// Nel caso di scambi di posizione, dovrò richiamare la funzione sui nodi inferiori per garantire la relazione padre<figliore
-void minHeapify(Node heap[], int n, int *hsP);
-
-// Ritorna la radice dell'heap, o -1 se è vuoto. Se non è vuoto, mette l'ultima foglia come radice
-// e chiama minHeapify sulla radice per sistemare l'heap rimasto.
-struct node deleteMin(Node heap[], int *hsP);
-
-// Dato un vettore di elementi non mucchificati, crea un minHeap.
-void createMinHeapify(Node heap[], int *hsP, int len);
 
 
-// La classifica potrebbe essere fatta con un heap/lista
+// updateRank - aggiorno la attuale classifica con il peso del nuovo grafo.
+void updateRank(int newIndex, int newPoint, int index[], int point[], int rLength, int *g);
+// Le funzioni successive servono a gestire la classifica - vengono usate anche left e right
+// L'heap è gestito con i pesi dei grafi, ma in tutte le funzioni è presente anche il vettore
+// di indici che segue gli swap e gli spostamenti dell'altro.
+// Inizialmente la classifica non è un heap, lo diventa solamente quando diventa pieno:
+// le varie funzioni quindi assumono di lavorare sempre con un heap pieno.
 
-// limite troppo piccolo di caratteri?
-//strtol invece di scanf?
+// Dato un vettore di elementi non mucchificati (heap), crea un maxHeap con indici che seguono.
+void createMaxHeapifyR(int heap[], int heapI[], int len);
+
+// Funzione di supporto per le altre: assumendo che i sottoheap dei figlio del nodo passato siano heap,
+// mucchifico anche questi 3 nodi. Nel caso di scambi di posizione, dovrò richiamare la funzione
+// sui nodi inferiori per garantire la relazione padre>figlio.
+void maxHeapifyR(int heap[], int heapI[], int n, int len);
+
+// Aggiunge un nuovo peso al grafo in ultima posizione dell'array (assumo che sia sempre pieno), poi
+// lo sposto verso la radice in base al suo peso.
+void insertMaxR(int newP, int newI, int heap[], int heapI[], int len);
+
+// Elimina la radice dell'heap e assumendo che l'heap sia sempre pieno, mette l'ultima foglia
+// come radice (che sarà sempre lunghezza-1); chiama poi maxHeapifyR sulla radice per sistemare l'heap rimasto.
+void deleteMaxR(int heap[], int heapI[], int len);
+
+// Scambia i valori di due posizioni in un due vettori.
+void swapR(int heap[], int heapI[], int x, int y);
+
+
+
+
 int main() {
     // Numero di nomi
     int nodes=0;
     // Lunghezza della classifica
     int rankLength=0;
-    // Variabile salva il risultato delle getchar, per leggere ogni input
-    int buffer;
     // Indice del grafo attuale e numero di tutti i grafi considerati
     int graphs=0;
     // Puntatore al numero di grafi per formattazione
     int *g = &graphs;
+
+    // Variabile salva il risultato delle getchar, per leggere ogni input
+    int buffer;
     // Vettore di interi in cui vengono salvate le cifre dei numeri
     int in[10];
     // Variabile utile al ciclo di lettura dell'input
@@ -103,6 +126,9 @@ int main() {
         return 0;
     }
 
+    // Matrice di adiacenza del nuovo grafo
+    int tempMat[nodes][nodes];
+
     // Si potrebbe allocare un po' di classifica alla volta
     // forse è meglio? tenere in considerazione la cosa
     // nel caso, andrebbe modificata leggermente la funzione updateRank
@@ -115,7 +141,7 @@ int main() {
     // Inizializzazione della classifica con valori vuoti di default
     for (int i = 0; i < rankLength; ++i) {
         rankIndex[i] = -1;
-        rankPoints[i] = -1;
+        rankPoints[i] = 0;
     }
 
     // Inizio del ciclo
@@ -132,28 +158,30 @@ int main() {
             for (int i = 0; i < 13; ++i) {
                 buffer = getchar_unlocked();
             }
-            // Matrice di adiacenza del nuovo grafo
-            int tempMat[nodes][nodes];
             // Inserimento dei valori nella matrice
             for (int i = 0; i < nodes; ++i) {
                 for (int j = 0; j < nodes; ++j) {
                     // In questo ciclo leggo una cifra alla volta fino alla virgola e la salvo in un vettore.
                     // Poi nel ciclo successivo ripristino il numero originale e lo salvo nella posizione corretta dell'array
+                    int zerocount=0;
                     buffer = getchar_unlocked() - 48;
-                    for (inCount = 0; inCount < 10 && buffer >=0; ++inCount) {
+                    for (inCount = 0; inCount < 10 && buffer >=0; ++inCount) {  // rallenta
                         in[inCount] = buffer;
+                        if(buffer == 0) ++zerocount;
                         buffer = getchar_unlocked() - 48;
                     }
                     // Gli archi che portano al nodo 0 non servono per il calcolo del percorso, li imposto a 0 per riutilizzarli successivamente
                     buffer = 0;
-                    if(j!=0) {
+                    if(j!=0 && inCount!=zerocount) {
                         order = --inCount;
                         for (; order >= 0; --order) {
-                            for (int k = 0; k < order; ++k) {
-                                pop*=10;
+                            if(in[inCount-order] != 0) {
+                                for (int k = 0; k < order; ++k) {   // rallenta
+                                    pop *= 10;
+                                }
+                                buffer += in[inCount-order] * pop;
+                                pop=1;
                             }
-                            buffer += in[inCount-order] * pop;
-                            pop=1;
                         }
                     }
                     tempMat[i][j] = buffer;
@@ -165,16 +193,16 @@ int main() {
             #ifndef EVAL
             printf("\nGrafo numero %d:\n", graphs);
             #endif
-            int weight = AggiungiGrafo(nodes, tempMat);
+            int weight = AggiungiGrafo(nodes, tempMat);     // rallenta
             //if(weight==-20) return 2;
             #ifndef EVAL
             printf("Fine grafo numero %d.\n", graphs);
             #endif
-            if(graphs >= rankLength && rankPoints[rankLength-1] <= weight){
+            if(graphs >= rankLength && rankPoints[0] <= weight){
                 // In questo caso ho la classifica piena e il nuovo peso è più grande del mio ultimo peso, quindi non aggiorno la classifica
                 }
             else{
-                updateRank(graphs, weight, rankIndex, rankPoints, rankLength);
+                updateRank(graphs, weight, rankIndex, rankPoints, rankLength, g);
             }
             // Incremento l'indice del grafo
             graphs++;
@@ -185,7 +213,6 @@ int main() {
             TopK(rankIndex, rankLength, g);
         }
     }
-    // Check del valore di buffer per evitare warning
     return 0;
 }
 
@@ -242,14 +269,6 @@ int AggiungiGrafo(int n, int graph[n][n]){
             }
             cont++;
         }
-        // check sull'integrità dell'heap
-        //int x = tempGraph[0].dist;
-        //for (int i = 1; i < hs; ++i) {
-        //    if(x > tempGraph[i].dist) {
-        //        printf("\nminimo: %d con indice %d, intruso: %d con indice %d, i vale %d", tempGraph[0].dist, tempGraph[0].index, tempGraph[i].dist, tempGraph[i].index, i);
-        //        return -20;
-        //    }
-        //}
     }
     int weight=0;
     for (int i = 0; i < n; ++i) {
@@ -267,80 +286,39 @@ int AggiungiGrafo(int n, int graph[n][n]){
 // TopK - stampo la classifica attuale
 void TopK(int index[], int length, int *g){
     for (int i = 0; i < length; ++i) {
-        if(index[i]!=-1) printf("%d", index[i]);   // Potrei avere problemi con la formattazione dell'output
+        if(index[i]!=-1) printf("%d", index[i]);
         if(i<*g-1) printf(" ");
     }
     printf("\n");
 }
 
 // updateRank - aggiorno la attuale classifica con il peso del nuovo grafo.
-void updateRank(int newIndex, int newPoint, int index[], int point[], int rLength){
-    if(point[rLength - 1] != - 1) {
-        for (int i = 0; i < rLength; ++i) {
-            // Per ogni grafo partendo da inizio classifica, confronto il suo peso con il nuovo
-            if(newPoint < point[i]){
-                // Salvo quelli precedenti e sovrascrivo
-                int pointTemp = point[i];
-                point[i] = newPoint;
-                int indexTemp = index[i];
-                index[i] = newIndex;
-                // Nel loop salvo a dal vettore, sovrascrivo la posizione di a nel vettore con b, salvo a in b - ripeto fino alla fine
-                for (int j = i+1; j < rLength; ++j) {
-                    newPoint = point[j];
-                    point[j] = pointTemp;
-                    pointTemp = newPoint;
-                    newIndex = index[j];
-                    index[j] = indexTemp;
-                    indexTemp = newIndex;
-                }
-                break;
-            }
+void updateRank(int newIndex, int newPoint, int index[], int point[], int rLength, int *g){
+    // Se la classifica non è ancora piena, inserisco il nuovo peso nella prima posizione libera
+    if(rLength > *g){
+        point[*g] = newPoint;
+        index[*g] = newIndex;
+        // Se ho appena riempito la classifica, la rendo un maxHeap chiamando la funzione adatta.
+        if(rLength == *g+1){
+            createMaxHeapifyR(point,index,rLength);
         }
     }
-        // Classifica non piena
+    // In questo caso la classifica è piena, ho già un heap, e se la funzione updateRank è stata chiamata,
+    // significa che il nuovo peso può stare in classifica: cancello l'ultimo e inserisco quello nuovo.
     else{
-        // Scorro la classifica cercando uno spazio vuoto, se prima trovo un peso maggiore del nuovo shifto tutto il vettore rimanente a destra di una posizione
-        for (int i = 0; i < rLength; ++i) {
-            if(point[i]!=-1){
-                if(newPoint < point[i]){
-                    // Ciclo in cui sposto gli indici a destra di una posizione partendo dalla fine
-                    for (int j = rLength - 2; j >= i; --j) {
-                        point[j+1] = point[j];
-                        index[j+1] = index[j];
-                    }
-                    // Salvo il nuovo peso in classifica
-                    point[i] = newPoint;
-                    index[i] = newIndex;
-                    break;
-                }
-            }
-                // Se ho trovato uno spazio vuoto, salvo il valore in classifica
-            else{
-                point[i] = newPoint;
-                index[i] = newIndex;
-                break;
-            }
-        }
+        deleteMaxR(point,index,rLength);
+        insertMaxR(newPoint,newIndex,point,index,rLength);
     }
 }
 
 // Tutte le funzioni qui sotto sono per la gestione del minHeap per l'algoritmo di Dijkstra
 
-// Scambia i valori di due posizioni in un vettore
-void swap(struct node heap[],int x, int y){
-    struct node temp;
-    temp = heap[x];
-    heap[x] = heap[y];
-    heap[y]=temp;
-}
-
-// Ritorna il figlio sinistro del nodo passato
-int left(int n){
-    return 2*n+1;
-}
-// Ritorna il figlio destro del nodo passato
-int right(int n){
-    return 2*n+2;
+// Dato un vettore di elementi non mucchificati, crea un minHeap.
+void createMinHeapify(struct node heap[], int *hsP, int len){
+    *hsP = len;
+    for (int i = floor((double) len/2)-1; i >=0 ; --i) {
+        minHeapify(heap,i,hsP);
+    }
 }
 
 // Funzione di supporto per le altre: assumendo che i sottoheap dei figlio del nodo passato siano heap, mucchifico anche questi 3 nodi.
@@ -385,10 +363,84 @@ struct node deleteMin(struct node heap[], int *hsP){
     return res;
 }
 
-// Dato un vettore di elementi non mucchificati, crea un minHeap.
-void createMinHeapify(struct node heap[], int *hsP, int len){
-    *hsP = len;
+// Scambia i valori di due posizioni in un vettore
+void swap(struct node heap[],int x, int y){
+    struct node temp;
+    temp = heap[x];
+    heap[x] = heap[y];
+    heap[y]=temp;
+}
+
+
+// Ritorna il figlio sinistro del nodo passato
+int left(int n){
+    return 2*n+1;
+}
+// Ritorna il figlio destro del nodo passato
+int right(int n){
+    return 2*n+2;
+}
+
+
+// Dato un vettore di elementi non mucchificati (heap), crea un maxHeap con indici che seguono.
+void createMaxHeapifyR(int heap[], int heapI[], int len){
     for (int i = floor((double) len/2)-1; i >=0 ; --i) {
-        minHeapify(heap,i,hsP);
+        maxHeapifyR(heap,heapI,i,len);
     }
+}
+
+// Funzione di supporto per le altre: assumendo che i sottoheap dei figlio del nodo passato siano heap,
+// mucchifico anche questi 3 nodi. Nel caso di scambi di posizione, dovrò richiamare la funzione
+// sui nodi inferiori per garantire la relazione padre>figlio.
+void maxHeapifyR(int heap[], int heapI[], int n, int len){
+    int l = left(n);
+    int r = right(n);
+    int min;
+    if(l < len && heap[l] > heap[n]){
+        min = l;
+    }
+    else{
+        min = n;
+    }
+    if(r < len && heap[r] > heap[min]){
+        min = r;
+    }
+    if(min != n){
+        swapR(heap, heapI, n, min);
+        maxHeapifyR(heap, heapI, min , len);
+    }
+}
+
+// Aggiunge un nuovo peso al grafo in ultima posizione dell'array (assumo che sia sempre pieno), poi
+// lo sposto verso la radice in base al suo peso.
+void insertMaxR(int newP, int newI, int heap[], int heapI[], int len){
+    heap[len-1] = newP;
+    heapI[len-1] = newI;
+    int x = ceil((double) (len-1)/2) - 1;
+    int y = len-1;
+    while(y > 0 && heap[x] < heap[y]){
+        swapR(heap,heapI,x,y);
+        x = ceil((double) x/2) - 1;
+        y = ceil((double) y/2) - 1;
+    }
+}
+
+// Elimina la radice dell'heap e assumendo che l'heap sia sempre pieno, mette l'ultima foglia
+// come radice (che sarà sempre lunghezza-1); chiama poi maxHeapifyR sulla radice per sistemare l'heap rimasto.
+void deleteMaxR(int heap[], int heapI[], int len){
+    heap[0] = heap[len-1];
+    heapI[0] = heapI[len-1];
+    maxHeapifyR(heap,heapI, 0, len-1);
+}
+
+
+// Scambia i valori di due posizioni in un due vettori.
+void swapR(int heap[], int heapI[], int x, int y){
+    long temp;
+    temp = heap[x];
+    heap[x] = heap[y];
+    heap[y] = temp;
+    temp = heapI[x];
+    heapI[x] = heapI[y];
+    heapI[y] = temp;
 }
