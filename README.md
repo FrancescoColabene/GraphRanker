@@ -1,6 +1,6 @@
 # Graph Ranker
 
-**Graph Ranker** è un progetto sviluppato per gestire una classifica di grafi in base al loro "peso", definito come la somma dei percorsi minimi dal nodo 0 a tutti gli altri nodi. Il progetto è stato realizzato come prova finale per il corso di **Algoritmi e Principi dell'Informatica** del Politecnico di Milano (Anno Accademico 2020/2021).
+**Graph Ranker** è un progetto sviluppato per gestire una classifica di grafi in base al loro "peso", definito come la somma dei percorsi minimi dal nodo 0 a tutti gli altri nodi. Il progetto è stato realizzato come prova finale per il corso di **Algoritmi e Principi dell'Informatica**.
 
 ## 📌 Descrizione
 
